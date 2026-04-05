@@ -5,6 +5,7 @@ import sys
 
 sys.path.append(os.path.abspath(".."))
 
+import compat
 from datasets.oxford_pets import OxfordPets
 from datasets.oxford_flowers import OxfordFlowers
 from datasets.fgvc_aircraft import FGVCAircraft
