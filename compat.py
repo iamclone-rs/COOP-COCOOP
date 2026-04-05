@@ -1,5 +1,6 @@
 import inspect
 
+import torch
 from torch.optim import lr_scheduler
 
 
@@ -33,4 +34,31 @@ def patch_torch_lr_scheduler_verbose():
         scheduler_cls.__init__ = compat_init
 
 
+def patch_torch_load_weights_only_default():
+    """Restore the pre-2.6 torch.load default for legacy checkpoints."""
+
+    try:
+        signature = inspect.signature(torch.load)
+    except (TypeError, ValueError):
+        return
+
+    if "weights_only" not in signature.parameters:
+        return
+
+    original_load = torch.load
+    if getattr(original_load, "_coop_weights_only_compat", False):
+        return
+
+    def compat_load(*args, **kwargs):
+        kwargs.setdefault("weights_only", False)
+        return original_load(*args, **kwargs)
+
+    compat_load._coop_weights_only_compat = True
+    compat_load.__doc__ = original_load.__doc__
+    compat_load.__name__ = original_load.__name__
+    compat_load.__qualname__ = original_load.__qualname__
+    torch.load = compat_load
+
+
 patch_torch_lr_scheduler_verbose()
+patch_torch_load_weights_only_default()
